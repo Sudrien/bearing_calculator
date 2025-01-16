@@ -1,0 +1,20 @@
+{
+  "name": "Bearing and Distance Calculator",
+  "short_name": "Bearing",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#16161D",
+  "theme_color": "#16161D",
+  "icons": [
+    {
+      "src": "icon-192x192.png",
+      "type": "image/png",
+      "sizes": "192x192"
+    },
+    {
+      "src": "icon-512x512.png",
+      "type": "image/png",
+      "sizes": "512x512"
+    }
+  ]
+}
