@@ -9,4 +9,4 @@ Also gives a preview of the direction and distance. Still trying to figure out t
 
 Uses [d3/d3](https://github.com/d3/d3) and [d3/d3-geo-projection](https://github.com/d3/d3-geo-projection)
 
-PWA should work for offline use.
+PWA should work for offline use. Live at [https://bearing.sudrien.net/](https://bearing.sudrien.net/)
