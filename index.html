@@ -88,7 +88,7 @@
             border: 1px solid #ccc;
         }
 
-        #lat1, #lat2, #diameter {
+        #lat1, #lat2, #diameter, #radius {
           border-top-left-radius: 10px 50%;
           border-bottom-left-radius: 10px 50%;
         }
@@ -148,11 +148,14 @@
           </dd>
         </dl>
         <dl>
-          <dt>Diameter:</dt>
+          <dt>Diameter OR Radius:</dt>
           <dd>
-            <input type="number" id="diameter" placeholder="(optional)" step="any">km
+            <input type="number" id="diameter" placeholder="Diameter" step="any">km (optional)
             <a href id="earthButton">🌍</a>
             <a href id="lunaButton">🌑</a>
+          </dd>
+          <dd>
+            <input type="number" id="radius" placeholder="Radius" step="any">km (optional)
             <a href id="solButton">☀️</a>
             <a href id="clearDiameter">🧹</a>
           </dd>
@@ -177,6 +180,50 @@
             bearingForm_submit();
             });
 
+
+
+// Helper function to convert degrees to radians
+function toRadians(degrees) {
+    return degrees * Math.PI / 180;
+}
+
+// Helper function to convert radians to degrees
+function toDegrees(radians) {
+    return radians * 180 / Math.PI;
+}
+
+// Function to calculate midpoint
+function calculateMidpoint(lat1, lon1, lat2, lon2, bearing) {
+    // Convert inputs to radians
+    let φ1 = toRadians(lat1);
+    let λ1 = toRadians(lon1);
+    let φ2 = toRadians(lat2);
+    let λ2 = toRadians(lon2);
+    let θ = toRadians(bearing);
+
+    // Calculate distance between two points
+    const d = Math.acos(
+        Math.sin(φ1) * Math.sin(φ2) +
+        Math.cos(φ1) * Math.cos(φ2) * Math.cos(λ2 - λ1)
+    );
+
+    // Midpoint latitude
+    let latMid = Math.asin(
+        Math.sin(φ1) * Math.cos(d / 2) +
+        Math.cos(φ1) * Math.sin(d / 2) * Math.cos(θ)
+    );
+
+    // Midpoint longitude
+    let lonMid = λ1 + Math.atan2(
+        Math.sin(θ) * Math.sin(d / 2) * Math.cos(φ1),
+        Math.cos(d / 2) - Math.sin(φ1) * Math.sin(latMid)
+    );
+
+    // Convert back to degrees
+    return [ toDegrees(latMid), toDegrees(lonMid) ];
+}
+
+
         function bearingForm_submit() {
             const toRadians = (degrees) => degrees * (Math.PI / 180);
             const toDegrees = (radians) => radians * (180 / Math.PI);
@@ -200,7 +247,12 @@
             bearing = (bearing + 360) % 360; // Normalize to 0-360 degrees
 
             const resultDiv = document.getElementById('result');
-            resultDiv.textContent = `Bearing: ${bearing.toFixed(2)}°`;
+            if(bearing) {
+              resultDiv.textContent = `Bearing: ${bearing.toFixed(2)}°T`;
+              }
+            else {
+              resultDiv.textContent = `Bearing: Uncalculated`;
+              }
 
             if (!isNaN(diameter) && diameter > 0) {
                 const a = Math.sin((lat2Rad - lat1Rad) / 2) ** 2 + Math.cos(lat1Rad) * Math.cos(lat2Rad) * Math.sin(dLon / 2) ** 2;
@@ -213,7 +265,12 @@
                 const a = Math.sin((lat2Rad - lat1Rad) / 2) ** 2 + Math.cos(lat1Rad) * Math.cos(lat2Rad) * Math.sin(dLon / 2) ** 2;
                 const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
                 const distancePercentage = (c / (2 * Math.PI)) * 100; // Calculate percentage
-                resultDiv.textContent += `\nDistance: ${distancePercentage.toFixed(2)}% of Equator`;
+                if(distancePercentage) {
+                  resultDiv.textContent += `\nDistance: ${distancePercentage.toFixed(2)}% of Equator`;
+                  }
+                else {
+                  resultDiv.textContent += `\nDistance: Uncalculated`;
+                  }
             }
 
 
@@ -227,7 +284,7 @@
     .attr("width", width)
     .attr("height", height);
 
-svg.selectAll("*").remove(); 
+  svg.selectAll("*").remove(); 
 
   // Define the projection
   const projection = d3.geoLaskowski()
@@ -254,10 +311,13 @@ svg.selectAll("*").remove();
     .attr("class", "graticule")
     .attr("d", path);
 
+
+console.warn([[lon1, lat1], calculateMidpoint(lat1, lon1, lat2, lon2, bearing), [lon2, lat2]], 'bearing', bearing)
+
  // Create a GeoJSON LineString for the great circle
   const greatCircle = {
     type: "LineString",
-    coordinates: [[lon1, lat1], [lon2, lat2]]
+    coordinates: [[lon1, lat1], calculateMidpoint(lat1, lon1, lat2, lon2, bearing), [lon2, lat2]]
   };
 
   // Add the great circle path to the SVG
@@ -267,23 +327,26 @@ svg.selectAll("*").remove();
     .attr("d", path);
 
 
+  if(Math.abs(lon1) + Math.abs(lat1) > 0 && Math.abs(lon2) + Math.abs(lat2) > 0 ) {
 
-// Define points as a FeatureCollection
-const points = {
-  type: "FeatureCollection",
-  features: [
-    {
-      type: "Feature",
-      geometry: { type: "Point", coordinates: [lon1, lat1] },
-      properties: { name: "Point 1" }
-    },
-    {
-      type: "Feature",
-      geometry: { type: "Point", coordinates: [lon2, lat2] },
-      properties: { name: "Point 2" }
-    }
-  ]
-};
+  // Define points as a FeatureCollection
+  const points = {
+    type: "FeatureCollection",
+    features: [
+      {
+        type: "Feature",
+        geometry: { type: "Point", coordinates: [lon1, lat1] },
+        properties: { name: "Point 1" }
+      },
+      {
+        type: "Feature",
+        geometry: { type: "Point", coordinates: [lon2, lat2] },
+        properties: { name: "Point 2" }
+      }
+    ]
+  };
+
+
 
 // Add points to the map using the path generator
 svg.selectAll("circle")
@@ -298,18 +361,22 @@ svg.selectAll("circle")
 
         document.getElementById('earthButton').addEventListener('click', function(e) {
             document.getElementById('diameter').value = 12742;
+            document.getElementById('radius').value = 6371;
             e.preventDefault();
         });
         document.getElementById('lunaButton').addEventListener('click', function(e) {
             document.getElementById('diameter').value = 3474;
+            document.getElementById('radius').value = 1737;
             e.preventDefault();
         });
         document.getElementById('solButton').addEventListener('click', function(e) {
             document.getElementById('diameter').value = 1391400;
+            document.getElementById('radius').value = 695700;
             e.preventDefault();
         });
         document.getElementById('clearDiameter').addEventListener('click', function(e) {
             document.getElementById('diameter').value = '';
+            document.getElementById('radius').value = '';
             e.preventDefault();
         });
         document.getElementById('clear1').addEventListener('click', function(e) {
@@ -317,14 +384,21 @@ svg.selectAll("circle")
             document.getElementById('lat1').value = '';
             e.preventDefault();
         });
-        document.getElementById('clear2').addEventListener('click', function(e) {
-            document.getElementById('lon2').value = '';
-            document.getElementById('lat2').value = '';
-            e.preventDefault();
+        document.getElementById('diameter').addEventListener('keyup', function(e) {
+            document.getElementById('radius').value = Number(document.getElementById('diameter').value) / 2;
+        });
+        document.getElementById('diameter').addEventListener('paste', function(e) {
+            document.getElementById('radius').value = Number(document.getElementById('diameter').value) / 2;
+        });
+        document.getElementById('radius').addEventListener('keyup', function(e) {
+            document.getElementById('diameter').value = Number(document.getElementById('radius').value) * 2;
+        });
+        document.getElementById('radius').addEventListener('paste', function(e) {
+            document.getElementById('diameter').value = Number(document.getElementById('radius').value) * 2;
         });
 
 
-
+}
 
 
 
