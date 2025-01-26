@@ -317,7 +317,8 @@ console.warn([[lon1, lat1], calculateMidpoint(lat1, lon1, lat2, lon2, bearing), 
  // Create a GeoJSON LineString for the great circle
   const greatCircle = {
     type: "LineString",
-    coordinates: [[lon1, lat1], calculateMidpoint(lat1, lon1, lat2, lon2, bearing), [lon2, lat2]]
+    coordinates: [[lon1, lat1], [lon2, lat2]]
+//    coordinates: [[lon1, lat1], calculateMidpoint(lat1, lon1, lat2, lon2, bearing), [lon2, lat2]]
   };
 
   // Add the great circle path to the SVG
